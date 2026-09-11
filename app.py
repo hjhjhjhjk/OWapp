@@ -2,10 +2,11 @@ import streamlit as st
 import os
 import uuid
 import base64
+import streamlit.components.v1 as components
 
-st.set_page_config(page_title="옵치 궁극기 시뮬", page_icon="💥")
+st.set_page_config(page_title="궁극기시뮬레이터", page_icon="💥")
 
-st.title("💥 오버워치 궁극기 시뮬레이터")
+st.title("💥 오버워치 궁극기시뮬레이터")
 st.write("버튼을 누르세요!")
 
 assets = {
@@ -15,26 +16,29 @@ assets = {
 }
 
 character = st.selectbox(
-    "어떤 영웅를 고르시겠습니까?",
+    "어떤 영웅을 고르시겠습니까?",
     list(assets.keys())
 )
 
 st.divider()
 
-# 눈에 안 보이는 오디오 자동 재생 HTML을 생성하는 함수
-def get_audio_html(audio_file, run_id):
+# 자바스크립트를 이용해 오디오를 백그라운드에서 강제로 재생하는 함수
+def play_audio_js(audio_file):
     if os.path.exists(audio_file):
         with open(audio_file, "rb") as f:
             audio_bytes = f.read()
         audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
-        # style="display:none;" 으로 화면에서 완전히 숨김
-        # run_id를 달아서 누를 때마다 새로운 오디오가 재생되도록 속임
-        return f"""
-            <audio autoplay style="display:none;" id="audio-{run_id}">
-                <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
-            </audio>
+        
+        # Audio 객체를 새로 만들어서 즉시 재생 (광클 시 소리 겹침 효과 기대)
+        js = f"""
+        <script>
+            var audio = new Audio("data:audio/mp3;base64,{audio_base64}");
+            audio.play();
+        </script>
         """
-    return ""
+        components.html(js, height=0)
+        return True
+    return False
 
 def get_css_effects(char, run_id):
     if char == "라인하르트":
@@ -118,18 +122,16 @@ def get_css_effects(char, run_id):
             </style>
         """
 
-if st.button(f"{character}! 궁극기 사용 ⚡", type="primary"):
+if st.button(f"{character}! 궁극기 발동⚡", type="primary"):
     run_id = str(uuid.uuid4())
     
     # 1. 시각 효과(CSS) 주입
     st.markdown(get_css_effects(character, run_id), unsafe_allow_html=True)
     
-    # 2. 오디오 강제 자동 재생 (플레이어 숨김)
+    # 2. 자바스크립트로 오디오 강제 재생 (광클 반응성 향상)
     audio_file = assets[character]["audio"]
-    audio_html = get_audio_html(audio_file, run_id)
-    if audio_html:
-        st.markdown(audio_html, unsafe_allow_html=True)
-    else:
+    is_played = play_audio_js(audio_file)
+    if not is_played:
         st.toast(f"🔇 {audio_file} 파일이 폴더에 없습니다!", icon="⚠️")
         
     # 3. 움짤(GIF) 재생
