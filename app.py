@@ -3,10 +3,10 @@ import os
 import uuid
 import base64
 
-st.set_page_config(page_title="궁극기 리얼 임팩트 시뮬레이터", page_icon="💥")
+st.set_page_config(page_title="옵치 궁극기 시뮬", page_icon="💥")
 
-st.title("💥 오버워치 궁극기 콤보 시뮬레이터")
-st.write("버튼을 누르고 화면과 소리를 즐기세요!")
+st.title("💥 오버워치 궁극기 시뮬레이터")
+st.write("버튼을 누르세요!")
 
 assets = {
     "겐지": {"gif": "genji.gif", "audio": "genji.mp3"},
@@ -15,7 +15,7 @@ assets = {
 }
 
 character = st.selectbox(
-    "어떤 캐릭터를 고르시겠습니까?",
+    "어떤 영웅를 고르시겠습니까?",
     list(assets.keys())
 )
 
@@ -118,7 +118,7 @@ def get_css_effects(char, run_id):
             </style>
         """
 
-if st.button(f"{character}! 풀콤보 발동 ⚡", type="primary"):
+if st.button(f"{character}! 궁극기 사용 ⚡", type="primary"):
     run_id = str(uuid.uuid4())
     
     # 1. 시각 효과(CSS) 주입
