@@ -1,56 +1,25 @@
 import streamlit as st
 import os
 import uuid
-import streamlit.components.v1 as components
 
 st.set_page_config(page_title="궁극기 리얼 임팩트 시뮬레이터", page_icon="💥")
 
 st.title("💥 오버워치 궁극기 콤보 시뮬레이터")
-st.write("목소리 톤(Pitch)까지 캐릭터에 맞춰 커스텀 완료!")
+st.write("버튼을 누르고 화면과 소리를 즐기세요!")
 
-gif_files = {
-    "겐지": "genji.gif",
-    "트레이서": "tracer.gif",
-    "라인하르트": "reinhardt.gif"
+# 로컬 GIF 움짤과 다운받은 MP3 파일 매핑
+assets = {
+    "겐지": {"gif": "genji.gif", "audio": "genji.mp3"},
+    "트레이서": {"gif": "tracer.gif", "audio": "tracer.mp3"},
+    "라인하르트": {"gif": "reinhardt.gif", "audio": "reinhardt.mp3"}
 }
 
 character = st.selectbox(
     "어떤 캐릭터를 고르시겠습니까?",
-    list(gif_files.keys())
+    list(assets.keys())
 )
 
 st.divider()
-
-# 목소리 변조(Pitch, Rate)가 적용된 TTS 함수
-def play_tts_sound(char):
-    dialogues = {
-        "겐지": "류진노 켄오 쿠라에!!",
-        "트레이서": "시간 좀 가속해 볼까?",
-        "라인하르트": "망치 나가신다!!! 으아아아아!"
-    }
-    text = dialogues.get(char, "")
-    
-    js = f"""
-    <script>
-        var msg = new SpeechSynthesisUtterance("{text}");
-        msg.lang = 'ko-KR';
-        
-        // 캐릭터별 목소리 변조 꼼수!
-        if ("{char}" === "겐지") {{
-            msg.pitch = 0.7; // 청년 느낌 (살짝 낮고 날렵하게)
-            msg.rate = 1.3;
-        }} else if ("{char}" === "트레이서") {{
-            msg.pitch = 1.6; // 여성 느낌 (높고 빠르게)
-            msg.rate = 1.5;
-        }} else if ("{char}" === "라인하르트") {{
-            msg.pitch = 0.1; // 덩치 큰 할아버지 (아주 낮고 묵직하게)
-            msg.rate = 0.8;
-        }}
-        
-        window.speechSynthesis.speak(msg);
-    </script>
-    """
-    components.html(js, height=0)
 
 def get_css_effects(char, run_id):
     if char == "라인하르트":
@@ -137,20 +106,20 @@ def get_css_effects(char, run_id):
 if st.button(f"{character}! 풀콤보 발동 ⚡", type="primary"):
     run_id = str(uuid.uuid4())
     
+    # 1. 시각 효과(CSS) 주입
     st.markdown(get_css_effects(character, run_id), unsafe_allow_html=True)
     
-    # 변조된 AI 성우 재생!
-    play_tts_sound(character)
-    
-    if character == "라인하르트":
-        st.error("망치 나가신다!!! 🔨💥")
-    elif character == "겐지":
-        st.success("류진노 켄오 쿠라에!!! 🐉⚔️ (2연속 베기!)")
-    elif character == "트레이서":
-        st.warning("시간 좀 가속해 볼까? ⏳💨")
-        
-    file_name = gif_files[character]
-    if os.path.exists(file_name):
-        st.image(file_name, use_container_width=True)
+    # 2. 오디오 재생 (스트림릿 기본 오디오 플레이어 + 자동재생)
+    audio_file = assets[character]["audio"]
+    if os.path.exists(audio_file):
+        # PC에서는 자동 재생, 모바일에서는 재생 버튼을 직접 누를 수 있게 플레이어 노출
+        st.audio(audio_file, format="audio/mpeg", autoplay=True)
     else:
-        st.info(f"💡 연출을 100% 즐기려면, {file_name} 파일을 폴더에 넣어주세요!")
+        st.toast(f"🔇 {audio_file} 파일이 폴더에 없습니다!", icon="⚠️")
+        
+    # 3. 움짤(GIF) 재생 (자막 삭제 완료)
+    gif_file = assets[character]["gif"]
+    if os.path.exists(gif_file):
+        st.image(gif_file, use_container_width=True)
+    else:
+        st.info(f"💡 {gif_file} 파일을 폴더에 넣어주세요!")
