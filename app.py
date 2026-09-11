@@ -1,13 +1,13 @@
 import streamlit as st
 import os
 import uuid
+import base64
 
 st.set_page_config(page_title="궁극기 리얼 임팩트 시뮬레이터", page_icon="💥")
 
 st.title("💥 오버워치 궁극기 콤보 시뮬레이터")
 st.write("버튼을 누르고 화면과 소리를 즐기세요!")
 
-# 로컬 GIF 움짤과 다운받은 MP3 파일 매핑
 assets = {
     "겐지": {"gif": "genji.gif", "audio": "genji.mp3"},
     "트레이서": {"gif": "tracer.gif", "audio": "tracer.mp3"},
@@ -20,6 +20,21 @@ character = st.selectbox(
 )
 
 st.divider()
+
+# 눈에 안 보이는 오디오 자동 재생 HTML을 생성하는 함수
+def get_audio_html(audio_file, run_id):
+    if os.path.exists(audio_file):
+        with open(audio_file, "rb") as f:
+            audio_bytes = f.read()
+        audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
+        # style="display:none;" 으로 화면에서 완전히 숨김
+        # run_id를 달아서 누를 때마다 새로운 오디오가 재생되도록 속임
+        return f"""
+            <audio autoplay style="display:none;" id="audio-{run_id}">
+                <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
+            </audio>
+        """
+    return ""
 
 def get_css_effects(char, run_id):
     if char == "라인하르트":
@@ -109,15 +124,15 @@ if st.button(f"{character}! 풀콤보 발동 ⚡", type="primary"):
     # 1. 시각 효과(CSS) 주입
     st.markdown(get_css_effects(character, run_id), unsafe_allow_html=True)
     
-    # 2. 오디오 재생 (스트림릿 기본 오디오 플레이어 + 자동재생)
+    # 2. 오디오 강제 자동 재생 (플레이어 숨김)
     audio_file = assets[character]["audio"]
-    if os.path.exists(audio_file):
-        # PC에서는 자동 재생, 모바일에서는 재생 버튼을 직접 누를 수 있게 플레이어 노출
-        st.audio(audio_file, format="audio/mpeg", autoplay=True)
+    audio_html = get_audio_html(audio_file, run_id)
+    if audio_html:
+        st.markdown(audio_html, unsafe_allow_html=True)
     else:
         st.toast(f"🔇 {audio_file} 파일이 폴더에 없습니다!", icon="⚠️")
         
-    # 3. 움짤(GIF) 재생 (자막 삭제 완료)
+    # 3. 움짤(GIF) 재생
     gif_file = assets[character]["gif"]
     if os.path.exists(gif_file):
         st.image(gif_file, use_container_width=True)
